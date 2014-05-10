@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+
+require "csv"
+require "shortest_path"
+require "optparse"
+
+csv_path = File.join(File.dirname(__FILE__), "data.csv")
+data_set = CSV.read(csv_path)
+labels = data_set.shift
+graph = {}
+data_set.each_with_index do |column, index|
+   graph[labels[index].to_sym] = Hash[labels.map { |l| l.to_sym }.zip column.map { |e| e.to_i } ]
+end
+
+graph.each_pair do |key, value|
+  graph[key] = value.delete_if { |_,v| v == 0 }
+end
+
+options = {}
+option_parser = OptionParser.new do |opts|
+  opts.banner = "Usage: shortest-path --start [START] --end [END]"
+  opts.separator ""
+  opts.on("-s [START]", "--start", "Start node") do |s|
+    options[:start] = s.upcase.to_sym
+  end
+  opts.on("-e [END]", "--end", "End node") do |e|
+    options[:end] = e.upcase.to_sym
+  end
+  opts.on_tail("-h", "--help", "Show this message") do
+    puts opts
+    exit 1
+  end
+end
+
+option_parser.parse!
+[:start, :end].each do |k|
+  unless labels.map { |l| l.upcase.to_sym }.include?(options[k])
+    puts "#{k} must be one of #{labels.join(', ')}"
+    exit 1
+  end
+end
+
+finder = ShortestPath::Finder.new(:A, :E).tap do |shortest_path|
+  shortest_path.ways_finder = Proc.new { |node| graph[node] }
+end
+
+finder.timeout = 2
+
+puts finder.path.inspect
+
+
