@@ -40,12 +40,11 @@ option_parser.parse!
   end
 end
 
-finder = ShortestPath::Finder.new(:A, :E).tap do |shortest_path|
+finder = ShortestPath::Finder.new(options[:start], options[:end]).tap do |shortest_path|
   shortest_path.ways_finder = Proc.new { |node| graph[node] }
 end
 
 finder.timeout = 2
 
 puts finder.path.inspect
-
 
